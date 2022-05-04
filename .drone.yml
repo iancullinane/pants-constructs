@@ -9,7 +9,7 @@ steps:
     commands:
       - npm install
       - npm run build
-      - ls -la
+      - ls -la lib
 
   - name: npm
     image: plugins/npm
