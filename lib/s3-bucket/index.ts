@@ -15,6 +15,8 @@ export class AllPurposeBucket extends Construct implements ITaggable {
   constructor(scope: Construct, id: string, props: S3BucketProps) {
     super(scope, id);
 
-    this.bucket = new s3.Bucket(this, `bucket-${props.bucketName}`);
+    this.bucket = new s3.Bucket(this, `bucket-${props.bucketName}`, {
+      bucketName: props.bucketName,
+    });
   }
 }
