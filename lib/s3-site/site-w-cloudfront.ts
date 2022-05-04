@@ -1,5 +1,4 @@
 import * as cdk from "aws-cdk-lib";
-import { CfnOutput, ITaggable, TagManager, Tags, Stack } from "aws-cdk-lib";
 import { Construct } from 'constructs';
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
@@ -26,9 +25,9 @@ export interface StaticSiteProps {
 //   "us-east-1": "ami-0f5513ad02f8d23ed",
 // }
 
-export class StaticSiteWithCloudfront extends Construct implements ITaggable {
+export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable {
 
-  public readonly tags: TagManager;
+  public readonly tags: cdk.TagManager;
 
   constructor(scope: Construct, id: string, props: StaticSiteProps) {
     super(scope, id);
