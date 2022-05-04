@@ -1,9 +1,8 @@
 {
   "name": "@ianpants/pants-constructs",
-  "version": "0.3.0",
-  "exports": {
-    "./s3-site": "./src/lib/s3-site/site-w-cloudfront.ts"
-  },
+  "version": "0.4.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
