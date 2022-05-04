@@ -1,0 +1,21 @@
+kind: pipeline
+name: default
+
+steps:
+steps:
+
+  - name: compile
+    image: node
+    commands:
+      - npm install
+      - ./node_modules/typescript/bin/tsc
+
+  - name: npm
+    image: plugins/npm
+    settings:
+      username: eignhpants
+      email: ian.cullinane@gmail.com
+      password:
+        from_secret: npm_pw
+      token:
+        from_secret: npm_token
