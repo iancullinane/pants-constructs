@@ -26,7 +26,7 @@ export interface StaticSiteProps {
 //   "us-east-1": "ami-0f5513ad02f8d23ed",
 // }
 
-export class StaticSite extends Construct implements ITaggable {
+export class StaticSiteWithCloudfront extends Construct implements ITaggable {
 
   public readonly tags: TagManager;
 

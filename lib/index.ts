@@ -10,7 +10,7 @@
 // import * as iam from "aws-cdk-lib/aws-iam";
 // import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 
-import { StaticSiteWithCloudfront } from "./s3-site/site-w-cloudfront";
+// import { StaticSiteWithCloudfront } from "./s3-site/site-w-cloudfront";
 
 // export class StaticSiteWithCloudfront;
 
