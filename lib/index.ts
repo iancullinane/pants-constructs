@@ -11,6 +11,7 @@
 // import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 
 export { StaticSiteWithCloudfront } from "./s3-site/site-w-cloudfront";
+export { AllPurposeBucket } from "./s3-bucket/bucket";
 
 // export class StaticSiteWithCloudfront;
 
