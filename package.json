@@ -1,8 +1,11 @@
 {
   "name": "@ianpants/pants-constructs",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "**/*.d.ts"
+  ],
   "publishConfig": {
     "access": "public"
   },
