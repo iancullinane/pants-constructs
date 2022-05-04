@@ -2,7 +2,6 @@ kind: pipeline
 name: default
 
 steps:
-steps:
 
   - name: compile
     image: node
