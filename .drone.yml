@@ -8,7 +8,8 @@ steps:
     image: node
     commands:
       - npm install
-      - ./node_modules/typescript/bin/tsc
+      - npm run build
+      - ls -la
 
   - name: npm
     image: plugins/npm
