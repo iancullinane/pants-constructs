@@ -17,6 +17,7 @@ export class AllPurposeBucket extends Construct implements ITaggable {
 
     this.bucket = new s3.Bucket(this, `bucket-${props.bucketName}`, {
       bucketName: props.bucketName,
+      autoDeleteObjects: true,
     });
   }
 }
