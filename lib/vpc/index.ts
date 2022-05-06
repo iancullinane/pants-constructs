@@ -6,7 +6,6 @@ import { Construct } from 'constructs';
 
 export interface VpcProps {
   project_name: string;
-  cidr: string;
   cidrRange?: string;
   natInstanceType?: string;
   azs?: number;
@@ -36,14 +35,14 @@ export class SimpleVpc extends Construct implements ITaggable {
     });
 
     // The code that defines your stack goes here
-    const vpc = new Vpc(this, `base-vpc-${props.project_name}`, {
+    this.vpc = new Vpc(this, `base-vpc-${props.project_name}`, {
       cidr: props.cidrRange,
       maxAzs: props.azs,
       natGatewayProvider: natGatewayProvider,
     });
 
-    const vpcSG = new SecurityGroup(this, 'SG', { vpc: vpc });
-    this.vpc = vpc;
+    const vpcSG = new SecurityGroup(this, 'SG', { vpc: this.vpc });
+    this.vpc = this.vpc;
 
     new CfnOutput(this, `${props.project_name}-sg-id`, {
       value: vpcSG.securityGroupId,
@@ -51,7 +50,7 @@ export class SimpleVpc extends Construct implements ITaggable {
       exportName: `core-vpc-${props.project_name}-sg-id`,
     });
     new CfnOutput(this, `${props.project_name}-vpc-id`, {
-      value: vpc.vpcId,
+      value: this.vpc.vpcId,
       description: 'The core vpc ID',
       exportName: `core-vpc-${props.project_name}-vpc-id`,
     });
