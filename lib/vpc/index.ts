@@ -42,7 +42,6 @@ export class SimpleVpc extends Construct implements ITaggable {
     });
 
     const vpcSG = new SecurityGroup(this, 'SG', { vpc: this.vpc });
-    this.vpc = this.vpc;
 
     new CfnOutput(this, `${props.project_name}-sg-id`, {
       value: vpcSG.securityGroupId,
