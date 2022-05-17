@@ -12,8 +12,9 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 
 
 export interface StaticSiteProps {
-  domainName: string;
-  hostedZoneID: string;
+  hostedZone: route53.IHostedZone;
+  contentBucket?: s3.IBucket;
+  fqdn: string;
   siteSubDomain?: string;
   certArn?: string;
 }
@@ -28,17 +29,11 @@ export interface StaticSiteProps {
 export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable {
 
   public readonly tags: cdk.TagManager;
+  public readonly siteBucket: s3.IBucket;
 
   constructor(scope: Construct, id: string, props: StaticSiteProps) {
     super(scope, id);
-
-    const fqdn = (props.siteSubDomain)
-      ? `${props.siteSubDomain}.${props.domainName}`
-      : `${props.domainName}`;
-
-    const zone = route53.HostedZone.fromHostedZoneId(this, 'GMCTopLevelZone', props.hostedZoneID);
-
-    const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, 'cloudfront-OAI', {
+    const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, `cloudfront-OAI-${props.fqdn}`, {
       comment: `OAI for ${id}`
     });
 
@@ -48,34 +43,38 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     // Content bucket
     // This has been divorced from the cdk and is in its own, there is a function
     // for s3 to auto load a compiled site, maybe use that...
-    const siteBucket = new s3.Bucket(this, 'SiteBucket', {
-      bucketName: fqdn,
-      websiteIndexDocument: 'index.html',
-      websiteErrorDocument: 'error.html',
-      publicReadAccess: false,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    if (props.contentBucket === undefined) {
+      this.siteBucket = new s3.Bucket(this, `SiteBucket-${props.fqdn}`, {
+        bucketName: props.fqdn,
+        websiteIndexDocument: 'index.html',
+        websiteErrorDocument: 'error.html',
+        publicReadAccess: false,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
 
-      /**
-       * The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
-       * the new bucket, and it will remain in your account until manually deleted. By setting the policy to
-       * DESTROY, cdk destroy will attempt to delete the bucket, but will error if the bucket is not empty.
-       */
-      //  THIS IS HOW TO DESTROY
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
+        /**
+        * The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
+        * the new bucket, and it will remain in your account until manually deleted. By setting the policy to
+        * DESTROY, cdk destroy will attempt to delete the bucket, but will error if the bucket is not empty.
+        */
+        //  THIS IS HOW TO DESTROY
+        removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
 
-      /**
-       * For sample purposes only, if you create an S3 bucket then populate it, stack destruction fails.  This
-       * setting will enable full cleanup of the demo.
-       */
-      autoDeleteObjects: true, // NOT recommended for production code
-    });
+        /**
+        * For sample purposes only, if you create an S3 bucket then populate it, stack destruction fails.  This
+        * setting will enable full cleanup of the demo.
+        */
+        autoDeleteObjects: true, // NOT recommended for production code
+      });
+    } else {
+      this.siteBucket = props.contentBucket;
+    }
     // Grant access to cloudfront
-    siteBucket.addToResourcePolicy(new iam.PolicyStatement({
+    this.siteBucket.addToResourcePolicy(new iam.PolicyStatement({
       actions: ['s3:GetObject'],
-      resources: [siteBucket.arnForObjects('*')],
+      resources: [this.siteBucket.arnForObjects('*')],
       principals: [new iam.CanonicalUserPrincipal(cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId)]
     }));
-    new cdk.CfnOutput(this, 'Bucket', { value: siteBucket.bucketName });
+    new cdk.CfnOutput(this, 'Bucket', { value: this.siteBucket.bucketName });
 
     const cert = acm.Certificate.fromCertificateArn(this, "cert", props.certArn!);
 
@@ -83,16 +82,16 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     const viewerCertificate = cloudfront.ViewerCertificate.fromAcmCertificate(cert, {
       sslMethod: cloudfront.SSLMethod.SNI,
       securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
-      aliases: [fqdn]
+      aliases: [props.fqdn]
     })
 
     // CloudFront distribution
-    const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+    const distribution = new cloudfront.CloudFrontWebDistribution(this, `SiteDistribution-${props.fqdn}`, {
       viewerCertificate,
       originConfigs: [
         {
           s3OriginSource: {
-            s3BucketSource: siteBucket,
+            s3BucketSource: this.siteBucket,
             originAccessIdentity: cloudfrontOAI
           },
           behaviors: [{
@@ -106,16 +105,16 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
 
     // Route53 alias record for the CloudFront distribution
-    new route53.ARecord(this, 'SiteAliasRecord', {
-      recordName: fqdn,
+    new route53.ARecord(this, `${props.fqdn}-AliasRecord`, {
+      recordName: props.fqdn,
       target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
-      zone
+      zone: props.hostedZone
     });
 
     // Deploy site contents to S3 bucket
-    new s3deploy.BucketDeployment(this, 'DeployWithInvalidation', {
+    new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
       sources: [s3deploy.Source.asset('./site-contents')],
-      destinationBucket: siteBucket,
+      destinationBucket: this.siteBucket,
       distribution,
       distributionPaths: ['/*'],
     });
