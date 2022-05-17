@@ -3,6 +3,20 @@ import * as r53 from "aws-cdk-lib/aws-route53";
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 
+
+export interface HzLookUpProps extends cdk.NestedStackProps {
+  domainName: string,
+}
+
+export class HostedZoneLookupStack extends cdk.NestedStack {
+  public readonly hz: r53.IHostedZone;
+
+  constructor(scope: Construct, id: string, props: HzLookUpProps) {
+    super(scope, id, props);
+    this.hz = r53.HostedZone.fromLookup(this, `Zone-${props.domainName}`, { domainName: props.domainName });
+  }
+}
+
 export interface LookUpProps extends cdk.NestedStackProps {
   vpcId: string,
   sgId: string,
