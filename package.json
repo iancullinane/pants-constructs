@@ -1,6 +1,6 @@
 {
   "name": "@ianpants/pants-constructs",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
@@ -26,7 +26,6 @@
     "typescript": "~4.6.3"
   },
   "dependencies": {
-    "@ianpants/pants-constructs": "^0.26.0",
     "aws-cdk-lib": "2.27.0",
     "constructs": "^10.0.107",
     "semver": "^7.3.5",

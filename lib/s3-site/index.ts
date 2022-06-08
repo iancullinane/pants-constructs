@@ -34,9 +34,7 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
 
   constructor(scope: Construct, id: string, props: StaticSiteProps) {
     super(scope, id);
-    const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, `cloudfront-OAI-${props.fqdn}`, {
-      comment: `OAI for ${id}`
-    });
+
 
     // An out put value is the same as the old ones, just in code not at the bottom
     // new cdk.CfnOutput(this, 'Site', { value: 'https://' + fqdn });
@@ -69,60 +67,77 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     } else {
       this.siteBucket = props.contentBucket;
     }
-    // Grant access to cloudfront
-    this.siteBucket.addToResourcePolicy(new iam.PolicyStatement({
-      actions: ['s3:GetObject'],
-      resources: [this.siteBucket.arnForObjects('*')],
-      principals: [new iam.CanonicalUserPrincipal(cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId)]
-    }));
-    new cdk.CfnOutput(this, 'Bucket', { value: this.siteBucket.bucketName });
+
+    // I may not need the below to provide a dev site to see
+
+    // new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
+    //   sources: [s3deploy.Source.asset('./site-contents')],
+    //   destinationBucket: this.siteBucket,
+    //   distribution,
+    //   distributionPaths: ['/*'],
+    // });
+    // /////////
+
+    // /////////
+    // TODO::make cloudfront optional for dev
+    // /////////
+    // const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, `cloudfront-OAI-${props.fqdn}`, {
+    //   comment: `OAI for ${id}`
+    // });
+    // // Grant access to cloudfront
+    // this.siteBucket.addToResourcePolicy(new iam.PolicyStatement({
+    //   actions: ['s3:GetObject'],
+    //   resources: [this.siteBucket.arnForObjects('*')],
+    //   principals: [new iam.CanonicalUserPrincipal(cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId)]
+    // }));
+    // new cdk.CfnOutput(this, 'Bucket', { value: this.siteBucket.bucketName });
 
 
-    const cert = acm.Certificate.fromCertificateArn(this, "cert", props.certArn!);
+    // const cert = acm.Certificate.fromCertificateArn(this, "cert", props.certArn!);
 
-    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront.CloudFrontWebDistribution.html#viewercertificate
-    const viewerCertificate = cloudfront.ViewerCertificate.fromAcmCertificate(cert, {
-      sslMethod: cloudfront.SSLMethod.SNI,
-      securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
-      aliases: [props.fqdn]
-    })
+    // // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront.CloudFrontWebDistribution.html#viewercertificate
+    // const viewerCertificate = cloudfront.ViewerCertificate.fromAcmCertificate(cert, {
+    //   sslMethod: cloudfront.SSLMethod.SNI,
+    //   securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
+    //   aliases: [props.fqdn]
+    // })
 
-    // Resource handler returned message: "Invalid request provided: IamCertificateId or AcmCertificateArn can be specified only
-    // if SslSupportMethod must also be specified and vice-versa." (RequestToken: , HandlerE
-    // rrorCode: InvalidRequest)
-    // CloudFront distribution
-    const distribution = new cloudfront.CloudFrontWebDistribution(this, `SiteDistribution-${props.fqdn}`, {
-      viewerCertificate,
-      originConfigs: [
-        {
-          s3OriginSource: {
-            s3BucketSource: this.siteBucket,
-            originAccessIdentity: cloudfrontOAI
-          },
-          behaviors: [{
-            isDefaultBehavior: true,
-            compress: true,
-            allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD_OPTIONS,
-          }],
-        }
-      ]
-    });
-    new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+    // // Resource handler returned message: "Invalid request provided: IamCertificateId or AcmCertificateArn can be specified only
+    // // if SslSupportMethod must also be specified and vice-versa." (RequestToken: , HandlerE
+    // // rrorCode: InvalidRequest)
+    // // CloudFront distribution
+    // const distribution = new cloudfront.CloudFrontWebDistribution(this, `SiteDistribution-${props.fqdn}`, {
+    //   viewerCertificate,
+    //   originConfigs: [
+    //     {
+    //       s3OriginSource: {
+    //         s3BucketSource: this.siteBucket,
+    //         originAccessIdentity: cloudfrontOAI
+    //       },
+    //       behaviors: [{
+    //         isDefaultBehavior: true,
+    //         compress: true,
+    //         allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD_OPTIONS,
+    //       }],
+    //     }
+    //   ]
+    // });
+    // new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
 
-    // Route53 alias record for the CloudFront distribution
-    new route53.ARecord(this, `${props.fqdn}-AliasRecord`, {
-      recordName: props.fqdn,
-      target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
-      zone: props.hostedZone
-    });
+    // // Route53 alias record for the CloudFront distribution
+    // new route53.ARecord(this, `${props.fqdn}-AliasRecord`, {
+    //   recordName: props.fqdn,
+    //   target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+    //   zone: props.hostedZone
+    // });
 
-    // Deploy site contents to S3 bucket
-    new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
-      sources: [s3deploy.Source.asset('./site-contents')],
-      destinationBucket: this.siteBucket,
-      distribution,
-      distributionPaths: ['/*'],
-    });
+    // // Deploy site contents to S3 bucket
+    // new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
+    //   sources: [s3deploy.Source.asset('./site-contents')],
+    //   destinationBucket: this.siteBucket,
+    //   distribution,
+    //   distributionPaths: ['/*'],
+    // });
 
   }
 }
