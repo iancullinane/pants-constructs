@@ -14,6 +14,7 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 export interface StaticSiteProps {
   hostedZone: route53.IHostedZone;
   contentBucket?: s3.IBucket;
+  bucketProps?: s3.BucketProps;
   fqdn: string;
   siteSubDomain?: string;
   certArn?: string;
@@ -76,15 +77,19 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     }));
     new cdk.CfnOutput(this, 'Bucket', { value: this.siteBucket.bucketName });
 
+
     const cert = acm.Certificate.fromCertificateArn(this, "cert", props.certArn!);
 
-
+    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront.CloudFrontWebDistribution.html#viewercertificate
     const viewerCertificate = cloudfront.ViewerCertificate.fromAcmCertificate(cert, {
       sslMethod: cloudfront.SSLMethod.SNI,
       securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
       aliases: [props.fqdn]
     })
 
+    // Resource handler returned message: "Invalid request provided: IamCertificateId or AcmCertificateArn can be specified only
+    // if SslSupportMethod must also be specified and vice-versa." (RequestToken: , HandlerE
+    // rrorCode: InvalidRequest)
     // CloudFront distribution
     const distribution = new cloudfront.CloudFrontWebDistribution(this, `SiteDistribution-${props.fqdn}`, {
       viewerCertificate,
