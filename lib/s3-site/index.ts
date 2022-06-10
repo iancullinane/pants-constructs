@@ -35,7 +35,9 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
   constructor(scope: Construct, id: string, props: StaticSiteProps) {
     super(scope, id);
 
-
+    if (props.siteSubDomain !== undefined) {
+      props.fqdn = `${props.siteSubDomain}.${props.fqdn}`
+    }
     // An out put value is the same as the old ones, just in code not at the bottom
     // new cdk.CfnOutput(this, 'Site', { value: 'https://' + fqdn });
 
