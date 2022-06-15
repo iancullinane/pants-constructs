@@ -1,6 +1,6 @@
 {
   "name": "@ianpants/pants-constructs",
-  "version": "0.29.0",
+  "version": "30.0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
@@ -17,18 +17,18 @@
     "cdk": "cdk"
   },
   "devDependencies": {
-    "@types/jest": "^27.4.1",
-    "@types/node": "17.0.23",
-    "aws-cdk": "2.27.0",
-    "jest": "^27.5.1",
-    "ts-jest": "^27.1.4",
-    "ts-node": "^10.7.0",
-    "typescript": "~4.6.3"
+    "@types/jest": "^28.1.1",
+    "@types/node": "17.0.44",
+    "aws-cdk": "2.28.0",
+    "jest": "^28.1.1",
+    "ts-jest": "^28.0.5",
+    "ts-node": "^10.8.1",
+    "typescript": "~4.7.3"
   },
   "dependencies": {
-    "aws-cdk-lib": "2.27.0",
-    "constructs": "^10.0.107",
-    "semver": "^7.3.5",
+    "aws-cdk-lib": "2.28.0",
+    "constructs": "^10.1.41",
+    "semver": "^7.3.7",
     "template-file": "^6.0.1"
   }
 }
