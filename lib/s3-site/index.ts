@@ -49,8 +49,8 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
         bucketName: props.fqdn,
         websiteIndexDocument: 'index.html',
         websiteErrorDocument: 'error.html',
-        publicReadAccess: false,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        publicReadAccess: true,
+        // blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
 
         /**
         * The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
@@ -72,12 +72,11 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
 
     // I may not need the below to provide a dev site to see
 
-    // new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
-    //   sources: [s3deploy.Source.asset('./site-contents')],
-    //   destinationBucket: this.siteBucket,
-    //   distribution,
-    //   distributionPaths: ['/*'],
-    // });
+    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3_deployment-readme.html
+    new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
+      sources: [s3deploy.Source.asset('./site-contents')],
+      destinationBucket: this.siteBucket,
+    });
     // /////////
 
     // /////////

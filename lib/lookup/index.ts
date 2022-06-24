@@ -8,7 +8,7 @@ export interface HzLookUpProps extends cdk.NestedStackProps {
   domainName: string,
 }
 
-export class HostedZoneLookupStack extends cdk.NestedStack {
+export class HostedZoneLookup extends cdk.NestedStack {
   public readonly hz: r53.IHostedZone;
 
   constructor(scope: Construct, id: string, props: HzLookUpProps) {
