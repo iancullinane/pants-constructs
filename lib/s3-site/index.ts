@@ -13,6 +13,7 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 
 export interface StaticSiteProps {
   hostedZone: route53.IHostedZone;
+  useCloudFront?: boolean;
   contentBucket?: s3.IBucket;
   bucketProps?: s3.BucketProps;
   fqdn: string;
@@ -35,22 +36,87 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
   constructor(scope: Construct, id: string, props: StaticSiteProps) {
     super(scope, id);
 
+
+    if (props.useCloudFront !== undefined) {
+      props.useCloudFront = false;
+    }
     if (props.siteSubDomain !== undefined) {
       props.fqdn = `${props.siteSubDomain}.${props.fqdn}`
     }
     // An out put value is the same as the old ones, just in code not at the bottom
     // new cdk.CfnOutput(this, 'Site', { value: 'https://' + fqdn });
 
-    // Content bucket
-    // This has been divorced from the cdk and is in its own, there is a function
-    // for s3 to auto load a compiled site, maybe use that...
+
+
+    if (props.useCloudFront) {
+      const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, `cloudfront-OAI-${props.fqdn}`, {
+        comment: `OAI for ${id}`
+      });
+      // Grant access to cloudfront
+      this.siteBucket.addToResourcePolicy(new iam.PolicyStatement({
+        actions: ['s3:GetObject'],
+        resources: [this.siteBucket.arnForObjects('*')],
+        principals: [new iam.CanonicalUserPrincipal(cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId)]
+      }));
+
+
+      // 
+      // Cert stuff
+      // 
+      const cert = acm.Certificate.fromCertificateArn(this, `cert`, props.certArn!);
+      // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront.CloudFrontWebDistribution.html#viewercertificate
+      const viewerCertificate = cloudfront.ViewerCertificate.fromAcmCertificate(cert, {
+        sslMethod: cloudfront.SSLMethod.SNI,
+        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
+        aliases: [props.fqdn]
+      })
+
+      // 
+      // Make dist
+      // 
+
+      // Resource handler returned message: "Invalid request provided: IamCertificateId or AcmCertificateArn can be specified only
+      // if SslSupportMethod must also be specified and vice-versa." (RequestToken: , HandlerE
+      // rrorCode: InvalidRequest)
+      // CloudFront distribution
+      const distribution = new cloudfront.CloudFrontWebDistribution(this, `SiteDistribution-${props.fqdn}`, {
+        viewerCertificate,
+        originConfigs: [
+          {
+            s3OriginSource: {
+              s3BucketSource: this.siteBucket,
+              originAccessIdentity: cloudfrontOAI
+            },
+            behaviors: [{
+              isDefaultBehavior: true,
+              compress: true,
+              allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD_OPTIONS,
+            }],
+          }
+        ]
+      });
+      new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+    }
+    // new cdk.CfnOutput(this, 'Bucket', { value: this.siteBucket.bucketName });
+
+
+
+    // If no bucket is provided build a new one, it will be public
+    // TODO::Restrict to an IP
     if (props.contentBucket === undefined) {
       this.siteBucket = new s3.Bucket(this, `SiteBucket-${props.fqdn}`, {
         bucketName: props.fqdn,
         websiteIndexDocument: 'index.html',
         websiteErrorDocument: 'error.html',
         publicReadAccess: true,
+
+
+        // TODO::Distribution options
+        //   distribution,
+        //   distributionPaths: ['/*'],
         // blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        // OR
+        // isolate to IP: https://aws.amazon.com/premiumsupport/knowledge-center/block-s3-traffic-vpc-ip/
 
         /**
         * The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
@@ -70,10 +136,9 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
       this.siteBucket = props.contentBucket;
     }
 
-    // I may not need the below to provide a dev site to see
-
     // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3_deployment-readme.html
     new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
+      // TODO::Automate getting sources
       sources: [s3deploy.Source.asset('./site-contents')],
       destinationBucket: this.siteBucket,
     });
