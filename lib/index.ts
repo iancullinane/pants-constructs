@@ -3,4 +3,4 @@ export { AllPurposeBucket } from "./s3-bucket";
 export { SimpleVpc } from "./vpc";
 export { ResourceLookupStack, HostedZoneLookup, VPCLookup } from "./lookup";
 export { LambdaRole } from "./iam";
-
+export { BasicCert } from "./acm";

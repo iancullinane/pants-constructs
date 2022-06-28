@@ -47,7 +47,10 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     // new cdk.CfnOutput(this, 'Site', { value: 'https://' + fqdn });
 
 
-
+    // 
+    // Use Cloudfront
+    // TODO::Lookup wildcard on this page: https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate.html
+    // 
     if (props.useCloudFront) {
       const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, `cloudfront-OAI-${props.fqdn}`, {
         comment: `OAI for ${id}`
