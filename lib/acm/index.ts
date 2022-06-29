@@ -21,11 +21,11 @@ export class BasicCert extends Construct implements ITaggable {
   constructor(scope: Construct, id: string, props: AcmProps) {
     super(scope, id);
 
-    const tld = new route53.HostedZone(this, `HostedZone-${props.tld}`, {
+    const tld = new route53.HostedZone(this, `${props.tld}-tld-hz`, {
       zoneName: props.tld,
     });
 
-    const wildcardTld = new route53.HostedZone(this, `HostedZone-${props.tld}`, {
+    const wildcardTld = new route53.HostedZone(this, `${props.tld}-sub-tld-hz`, {
       zoneName: `*.${props.tld}`,
     });
     let wildcardUrl = `*.${props.tld}`
