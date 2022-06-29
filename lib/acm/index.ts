@@ -25,9 +25,9 @@ export class BasicCert extends Construct implements ITaggable {
       zoneName: props.tld,
     });
 
-    const wildcardTld = new route53.HostedZone(this, `${props.tld}-sub-tld-hz`, {
-      zoneName: `*.${props.tld}`,
-    });
+    // const wildcardTld = new route53.HostedZone(this, `${props.tld}-sub-tld-hz`, {
+    //   zoneName: `*.${props.tld}`,
+    // });
     let wildcardUrl = `*.${props.tld}`
 
     const cert = new acm.Certificate(this, 'Certificate', {
@@ -35,7 +35,7 @@ export class BasicCert extends Construct implements ITaggable {
       subjectAlternativeNames: [`*.${props.tld}`],
       validation: acm.CertificateValidation.fromDnsMultiZone({
         tld: tld,
-        wildcardUrl: wildcardTld,
+        wildcardUrl: tld,
       }),
     });
 
