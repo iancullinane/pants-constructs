@@ -17,22 +17,23 @@ export class BasicCert extends Construct implements ITaggable {
 
   public readonly tags: TagManager;
   public readonly cert: acm.ICertificate;
+  public readonly tld: route53.IHostedZone;
 
   constructor(scope: Construct, id: string, props: AcmProps) {
     super(scope, id);
 
-    const tld = new route53.HostedZone(this, `${props.tld}-tld-hz`, {
+    this.tld = new route53.HostedZone(this, `${props.tld}-tld-hz`, {
       zoneName: props.tld,
     });
 
-    let wildcardUrl = `*.${props.tld}`
 
+    let wildcardUrl = `*.${props.tld}`
     this.cert = new acm.Certificate(this, 'Certificate', {
       domainName: props.tld,
       subjectAlternativeNames: [`*.${props.tld}`],
       validation: acm.CertificateValidation.fromDnsMultiZone({
-        tld: tld,
-        wildcardUrl: tld,
+        tld: this.tld,
+        wildcardUrl: this.tld,
       }),
     });
   }
