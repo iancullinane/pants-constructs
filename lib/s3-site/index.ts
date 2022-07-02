@@ -37,16 +37,14 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     super(scope, id);
 
 
-    if (props.useCloudFront !== undefined) {
+    if (props.useCloudFront === undefined) {
       props.useCloudFront = false;
     }
-    if (props.siteSubDomain !== undefined) {
+    if (props.siteSubDomain) {
       props.fqdn = `${props.siteSubDomain}.${props.fqdn}`
     }
     // An out put value is the same as the old ones, just in code not at the bottom
     // new cdk.CfnOutput(this, 'Site', { value: 'https://' + fqdn });
-
-
     // 
     // Use Cloudfront
     // TODO::Lookup wildcard on this page: https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate.html
