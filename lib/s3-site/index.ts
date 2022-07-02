@@ -43,9 +43,45 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
     if (props.siteSubDomain) {
       props.fqdn = `${props.siteSubDomain}.${props.fqdn}`
     }
-    // An out put value is the same as the old ones, just in code not at the bottom
-    // new cdk.CfnOutput(this, 'Site', { value: 'https://' + fqdn });
-    // 
+
+    // TODO::Distribution options
+    //   distribution,
+    //   distributionPaths: ['/*'],
+    // blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    // OR
+    // isolate to IP: https://aws.amazon.com/premiumsupport/knowledge-center/block-s3-traffic-vpc-ip/
+
+
+    // If no bucket is provided build a new one, it will be public
+    // TODO::Restrict to an IP
+    if (props.contentBucket === undefined) {
+      this.siteBucket = new s3.Bucket(this, `SiteBucket-${props.fqdn}`, {
+        bucketName: props.fqdn,
+        /**
+        * The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
+        * the new bucket, and it will remain in your account until manually deleted. By setting the policy to
+        * DESTROY, cdk destroy will attempt to delete the bucket, but will error if the bucket is not empty.
+        */
+        //  THIS IS HOW TO DESTROY
+        removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
+
+        /**
+        * For sample purposes only, if you create an S3 bucket then populate it, stack destruction fails.  This
+        * setting will enable full cleanup of the demo.
+        */
+        autoDeleteObjects: true, // NOT recommended for production code
+      });
+    } else {
+      this.siteBucket = props.contentBucket;
+    }
+
+    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3_deployment-readme.html
+    new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
+      // TODO::Automate getting sources
+      sources: [s3deploy.Source.asset('./site-contents')],
+      destinationBucket: this.siteBucket,
+    });
+
     // Use Cloudfront
     // TODO::Lookup wildcard on this page: https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate.html
     // 
@@ -102,47 +138,8 @@ export class StaticSiteWithCloudfront extends Construct implements cdk.ITaggable
 
 
 
-    // If no bucket is provided build a new one, it will be public
-    // TODO::Restrict to an IP
-    if (props.contentBucket === undefined) {
-      this.siteBucket = new s3.Bucket(this, `SiteBucket-${props.fqdn}`, {
-        bucketName: props.fqdn,
-        websiteIndexDocument: 'index.html',
-        websiteErrorDocument: 'error.html',
-        publicReadAccess: true,
 
 
-        // TODO::Distribution options
-        //   distribution,
-        //   distributionPaths: ['/*'],
-        // blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-        // OR
-        // isolate to IP: https://aws.amazon.com/premiumsupport/knowledge-center/block-s3-traffic-vpc-ip/
-
-        /**
-        * The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
-        * the new bucket, and it will remain in your account until manually deleted. By setting the policy to
-        * DESTROY, cdk destroy will attempt to delete the bucket, but will error if the bucket is not empty.
-        */
-        //  THIS IS HOW TO DESTROY
-        removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
-
-        /**
-        * For sample purposes only, if you create an S3 bucket then populate it, stack destruction fails.  This
-        * setting will enable full cleanup of the demo.
-        */
-        autoDeleteObjects: true, // NOT recommended for production code
-      });
-    } else {
-      this.siteBucket = props.contentBucket;
-    }
-
-    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3_deployment-readme.html
-    new s3deploy.BucketDeployment(this, `${props.fqdn}-S3-Deployment`, {
-      // TODO::Automate getting sources
-      sources: [s3deploy.Source.asset('./site-contents')],
-      destinationBucket: this.siteBucket,
-    });
     // /////////
 
     // /////////
